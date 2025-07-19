@@ -1,0 +1,1209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprint Confidence Pulse</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF and html2canvas for PDF generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        /* Custom font for Inter */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            /* Reduced overall base font size for a more compact UI */
+            font-size: 0.9375rem; /* Approximately 15px */
+        }
+        /* Basic animation for loading spinner */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        /* Style for the accordion summary arrow */
+        details summary::-webkit-details-marker {
+            display: none;
+        }
+        details summary {
+            list-style: none; /* Remove default marker */
+        }
+        details summary::after {
+            content: '\25BC'; /* Down arrow for closed state */
+            float: right;
+            font-size: 1rem; /* Adjust font size for arrow */
+            line-height: 1;
+            transition: transform 0.2s ease-in-out;
+            transform: rotate(0deg); /* Initial state: down arrow */
+        }
+        details[open] summary::after {
+            transform: rotate(180deg); /* Rotate to point up for open state */
+        }
+
+        /* Custom width for bottom buttons to ensure equal distribution within their container */
+        /* Assuming a gap of 12px (gap-3 in Tailwind) between 3 buttons */
+        /* Total width = 100% of parent. 100% - (2 * gap) = space for buttons. Divide by 3. */
+        /* (100% - 24px) / 3 */
+        .bottom-button-width {
+            width: calc((100% - 24px) / 3); /* 24px is gap-3 * 2 */
+        }
+
+        /* Ensure the "Add Member" button in Manage Team Data also spans full width */
+        #manage-team-data-section button[type="submit"] {
+            width: 100%; /* Ensure it takes full width of its parent */
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-100 antialiased">
+
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-700 to-blue-900 text-white p-4 shadow-lg">
+        <div class="container mx-auto flex items-center justify-between">
+            <h1 class="text-2xl font-bold flex items-center">
+                <!-- CheckCircle Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-7 w-7">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Sprint Confidence Pulse
+            </h1>
+            <!-- Add Team Member Button (initially hidden) -->
+            <button id="add-team-member-button" class="hidden bg-gradient-to-r from-purple-500 to-green-500 hover:from-purple-600 hover:to-green-600 text-white font-bold py-2 px-3 rounded-lg shadow-md transition-colors duration-200 flex items-center text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+                Add Member
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-4 max-w-4xl" id="main-content-for-pdf">
+        <!-- Manage Team Data Section -->
+        <div id="manage-team-data-section" class="bg-white rounded-xl shadow-lg p-5 mb-6 border-t-4 border-indigo-600">
+            <h2 class="text-xl font-semibold text-gray-800 mb-3 flex items-center">
+                <!-- Settings Icon (or similar) -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-6 w-6 text-purple-600">
+                    <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.78 1.25a2 2 0 0 0 .73 2.73l.04.02a2 2 0 0 1 .97 1.95v.44a2 2 0 0 1-.97 1.95l-.04.02a2 2 0 0 0-.73 2.73l.78 1.25a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.78-1.25a2 2 0 0 0-.73-2.73l-.04-.02a2 2 0 0 1-.97-1.95v-.44a2 2 0 0 1 .97-1.95l.04-.02a2 2 0 0 0 .73-2.73l-.78-1.25a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                    <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                Manage Team Data
+            </h2>
+            <form id="add-member-form" class="space-y-3">
+                <div>
+                    <label for="new-member-name" class="block text-gray-700 text-sm font-bold mb-1">New Team Member Name:</label>
+                    <input type="text" id="new-member-name" class="shadow appearance-none border rounded w-full py-1.5 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline text-sm" placeholder="Enter team member name">
+                </div>
+                <div>
+                    <label for="new-member-tasks" class="block text-gray-700 text-sm font-bold mb-1">Initial Tasks (comma-separated):</label>
+                    <textarea id="new-member-tasks" rows="1" class="shadow appearance-none border rounded w-full py-1.5 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline resize-y text-sm" placeholder="Task 1, Task 2, Task 3"></textarea>
+                </div>
+                <button type="submit" class="w-full bg-gradient-to-r from-purple-500 to-green-500 hover:from-purple-600 hover:to-green-600 text-white font-bold py-2 px-3 rounded-lg shadow-md focus:outline-none focus:shadow-outline flex items-center justify-center text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    Add Member
+                </button>
+            </form>
+        </div>
+
+        <!-- Team Members Section (Accordion View) -->
+        <section id="team-members-container" class="space-y-3 mb-6">
+            <!-- Team member accordion items will be dynamically inserted here by JavaScript -->
+        </section>
+
+        <!-- Overall Confidence -->
+        <div class="bg-white rounded-xl shadow-lg p-4 mb-6 border-t-4 border-blue-500">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3 flex items-center">
+                <!-- Gauge Icon -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-6 w-6 text-blue-500">
+                    <path d="M12 14V20"></path>
+                    <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"></path>
+                    <path d="M12 2v2"></path>
+                    <path d="M12 20v2"></path>
+                    <path d="M18.4 17.6l-1.4-1.4"></path>
+                    <path d="M6.8 6.8 5.4 5.4"></path>
+                    <path d="M17.6 18.4l1.4 1.4"></path>
+                    <path d="M5.4 18.4l1.4 1.4"></path>
+                    <path d="M22 12h-2"></path>
+                    <path d="M4 12H2"></path>
+                </svg>
+                Overall Confidence
+            </h2>
+            <div class="flex items-center justify-between">
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="overall-confidence-bar" class="h-2 rounded-full transition-all duration-500 ease-out" style="width: 0%; background: linear-gradient(to right, #EF4444, #DC2626);"></div>
+                </div>
+                <span id="overall-confidence-percentage" class="ml-3 text-base font-bold text-gray-700">0%</span>
+            </div>
+            <p class="text-gray-700 text-xs mt-2 flex items-center">
+                Aggregated confidence level
+            </p>
+        </div>
+
+        <!-- Overall Confidence Alert Message Section -->
+        <div id="overall-confidence-alert" class="hidden p-2.5 mb-4 rounded-lg shadow-md" role="alert">
+            <p id="overall-confidence-alert-text" class="font-bold flex items-center text-xs"></p>
+        </div>
+
+        <!-- Download Report Buttons -->
+        <div class="flex flex-col sm:flex-row justify-center gap-3 mt-6 w-full">
+            <button id="upload-json-btn" class="bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300 ease-in-out flex items-center justify-center text-sm bottom-button-width">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                    <path d="M21.44 11.02L15 2.5 8.56 11.02A2 2 0 0 0 8 12.5V20a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2v-7.48a2 2 0 0 0-.56-1.48z"></path>
+                    <polyline points="10 2 10 8 14 8 14 2"></polyline>
+                </svg>
+                Upload JSON
+            </button>
+            <input type="file" id="upload-json-input" accept=".json" class="hidden" multiple>
+            <button id="save-json-btn" class="bg-gradient-to-r from-purple-500 to-indigo-600 hover:from-purple-600 hover:to-indigo-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300 ease-in-out flex items-center justify-center bottom-button-width">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                    <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline>
+                    <path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path>
+                </svg>
+                Save Details
+            </button>
+            <button id="download-report-btn" class="bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white font-bold py-2 px-6 rounded-lg shadow-md transition-all duration-300 ease-in-out flex items-center justify-center bottom-button-width">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Report
+            </button>
+        </div>
+    </main>
+
+    <!-- Hidden container for PDF report content -->
+    <div id="pdf-report-container" style="position: absolute; left: -9999px;"></div>
+
+    <script>
+        // Hardcoded team member data - now empty
+        let teamMembersData = [];
+
+        // DOM Elements
+        const addMemberForm = document.getElementById('add-member-form');
+        const newMemberNameInput = document.getElementById('new-member-name');
+        const newMemberTasksInput = document.getElementById('new-member-tasks');
+        const teamMembersContainer = document.getElementById('team-members-container');
+        const overallConfidenceBar = document.getElementById('overall-confidence-bar');
+        const overallConfidencePercentage = document.getElementById('overall-confidence-percentage');
+        const downloadReportButton = document.getElementById('download-report-btn');
+        const saveJsonButton = document.getElementById('save-json-btn'); // New JSON save button
+        const uploadJsonButton = document.getElementById('upload-json-btn'); // New JSON upload button
+        const uploadJsonInput = document.getElementById('upload-json-input'); // Hidden file input
+        const manageTeamDataSection = document.getElementById('manage-team-data-section');
+        const addTeamMemberButton = document.getElementById('add-team-member-button');
+        const mainContentForPdf = document.getElementById('main-content-for-pdf');
+        const overallConfidenceAlert = document.getElementById('overall-confidence-alert');
+        const overallConfidenceAlertText = document.getElementById('overall-confidence-alert-text');
+        const pdfReportContainer = document.getElementById('pdf-report-container');
+
+
+        /**
+         * Renders all team member accordion items to the DOM.
+         * @param {Array<Object>} members - Array of team member data.
+         */
+        function renderTeamMembers(members) {
+            teamMembersContainer.innerHTML = ''; // Clear existing items
+            members.forEach(member => {
+                teamMembersContainer.appendChild(createTeamMemberAccordionItem(member));
+            });
+            updateManageTeamDataVisibility(); // Call to update visibility after rendering
+        }
+
+        /**
+         * Toggles the visibility of the "Manage Team Data" section.
+         */
+        function toggleManageTeamDataVisibility() {
+            if (manageTeamDataSection.classList.contains('hidden')) {
+                manageTeamDataSection.classList.remove('hidden');
+                addTeamMemberButton.classList.add('hidden'); // Hide the button when section is open
+            } else {
+                manageTeamDataSection.classList.add('hidden');
+                addTeamMemberButton.classList.remove('hidden'); // Show the button when section is closed
+            }
+        }
+
+        /**
+         * Updates the visibility of the "Manage Team Data" section and the "Add Team Member" button.
+         */
+        function updateManageTeamDataVisibility() {
+            if (teamMembersData.length === 0) {
+                manageTeamDataSection.classList.remove('hidden'); // Show manage section
+                addTeamMemberButton.classList.add('hidden'); // Hide add button
+            } else {
+                manageTeamDataSection.classList.add('hidden'); // Hide manage section
+                addTeamMemberButton.classList.remove('hidden'); // Show add button
+            }
+        }
+
+        // Attach click listener to the new "Add Team Member" button in the header
+        addTeamMemberButton.addEventListener('click', toggleManageTeamDataVisibility);
+
+
+        /**
+         * Creates an HTML <details> element for a single team member (accordion item).
+         * @param {Object} member - The team member data.
+         * @returns {HTMLElement} The created <details> element.
+         */
+        function createTeamMemberAccordionItem(member) {
+            const detailsElement = document.createElement('details');
+            // Changed: bg-white to bg-blue-50 for subtle color
+            detailsElement.className = "bg-blue-50 rounded-xl shadow-lg border-t-4 border-blue-400 overflow-hidden";
+            detailsElement.id = `member-accordion-${member.id}`; // Add ID for easy access
+
+            // Summary (header of the accordion)
+            const summaryElement = document.createElement('summary');
+            // Changed: hover:bg-gray-50 to hover:bg-blue-100
+            summaryElement.className = "flex items-center justify-between p-4 cursor-pointer bg-blue-100 hover:bg-blue-200 transition-colors duration-200";
+            summaryElement.innerHTML = `
+                <h3 class="text-lg font-semibold text-gray-800 flex items-center">
+                    <!-- Users Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-5 w-5 text-blue-500">
+                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="9" cy="7" r="4"></circle>
+                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                    </svg>
+                    ${member.name}
+                </h3>
+                <div class="flex items-center space-x-2">
+                    <span class="text-base font-semibold ${getConfidenceColor(member.confidenceLevel || '')}">
+                        ${member.confidenceLevel || 'N/A'}
+                    </span>
+                    <!-- Plus/Minus handled by CSS ::after pseudo-element -->
+                </div>
+            `;
+            detailsElement.appendChild(summaryElement);
+
+            // Content (collapsible area)
+            const contentDiv = document.createElement('div');
+            contentDiv.className = "p-4 pt-0 border-t border-gray-200";
+
+            let tasksHtml = '';
+            if (member.assignedTasks && member.assignedTasks.length > 0) {
+                tasksHtml = member.assignedTasks.map(task => `
+                    <div class="mb-3 p-3 bg-blue-50 rounded-lg border border-blue-200" id="task-${member.id}-${task.id}">
+                        <div class="flex justify-between items-center mb-2">
+                            <p class="text-gray-700 font-medium flex items-center text-sm">
+                                <!-- Task Icon -->
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1 h-4 w-4 text-gray-600">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                    <polyline points="14 2 14 8 20 8"></polyline>
+                                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                                    <line x1="10" y1="9" x2="8" y2="9"></line>
+                                </svg>
+                                <input type="text" id="task-name-${member.id}-${task.id}" value="${task.name}" class="w-full bg-transparent border-b border-gray-300 focus:outline-none focus:border-blue-500 text-sm font-medium" />
+                            </p>
+                            <button type="button" onclick="deleteTask('${member.id}', '${task.id}')" class="text-red-600 hover:text-red-800 transition-colors duration-200 ml-2 shadow-md rounded-lg p-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M3 6h18"></path>
+                                    <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                                    <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="mb-2">
+                            <label for="confidence-${member.id}-${task.id}" class="block text-gray-600 text-xs font-medium mb-1">
+                                Task Confidence:
+                            </label>
+                            <select
+                                id="confidence-${member.id}-${task.id}"
+                                onchange="updateConfidenceHighlight(this, '${member.id}', '${task.id}')"
+                                class="w-full p-1.5 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent transition-all duration-200 text-xs ${getConfidenceHighlightClasses(task.confidenceLevel || '')}"
+                            >
+                                <option value="">Select Confidence</option>
+                                <option value="Very High" ${task.confidenceLevel === 'Very High' ? 'selected' : ''}>Very High</option>
+                                <option value="High" ${task.confidenceLevel === 'High' ? 'selected' : ''}>High</option>
+                                <option value="Medium" ${task.confidenceLevel === 'Medium' ? 'selected' : ''}>Medium</option>
+                                <option value="Low" ${task.confidenceLevel === 'Low' ? 'selected' : ''}>Low</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="comment-${member.id}-${task.id}" class="block text-gray-600 text-xs font-medium mb-1">
+                                Task Comments:
+                            </label>
+                            <textarea
+                                id="comment-${member.id}-${task.id}"
+                                rows="1"
+                                class="w-full p-1.5 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent resize-y text-xs"
+                                placeholder="E.g., 'Completed DoD', 'Blocker encountered'"
+                            >${task.comment || ''}</textarea>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                tasksHtml = '<p class="text-sm italic text-gray-500">No tasks assigned for this assignee.</p>';
+            }
+
+            contentDiv.innerHTML = `
+                <!-- Assigned Tasks Section -->
+                <div class="mb-4">
+                    <p class="text-gray-600 font-medium mb-3 flex items-center text-base">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-5 w-5 text-green-500">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Assigned Tasks:
+                    </p>
+                    <div class="space-y-3">
+                        ${tasksHtml}
+                    </div>
+                    <button type="button" onclick="addNewTaskInput('${member.id}')" class="mt-4 bg-gradient-to-r from-blue-400 to-cyan-500 hover:from-blue-500 hover:to-cyan-600 text-white font-semibold py-2 px-3 rounded-lg text-sm flex items-center shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Add New Task
+                    </button>
+                </div>
+
+                <form id="form-${member.id}">
+                    <!-- Submission Button -->
+                    <button
+                        type="submit"
+                        id="submit-btn-${member.id}"
+                        class="w-full bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white py-2.5 px-4 rounded-lg font-semibold transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mt-6 shadow-md text-sm">
+                        <!-- CheckCircle Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-5 w-5">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Update All Task Confidence
+                    </button>
+
+                    <!-- Feedback Message -->
+                    <div id="message-${member.id}" class="mt-3 p-2 rounded-lg text-center text-xs hidden"></div>
+
+                    <!-- Display Last Submitted Info (Feedback Mechanism) -->
+                    <div class="mt-5 pt-3 border-t border-gray-200">
+                        <p class="text-gray-600 font-medium mb-2 flex items-center text-sm">
+                            <!-- MessageSquare Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-4 w-4 text-indigo-500">
+                                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V3a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                            </svg>
+                            Assignee's Overall Confidence:
+                        </p>
+                        <div class="bg-blue-100 p-2.5 rounded-lg border border-blue-200">
+                            <p class="text-sm text-gray-700">
+                                Level: <span class="font-semibold ${getConfidenceColor(member.confidenceLevel || '')}">${member.confidenceLevel || 'N/A'}</span>
+                            </p>
+                            <p class="text-sm text-gray-700 mt-1">
+                                Summary: <span class="italic">${member.comment || 'No overall comment.'}</span>
+                            </p>
+                            <p class="text-xs text-gray-500 mt-1">
+                                Last updated by: <span class="font-mono">${member.lastUpdatedBy}</span>
+                            </p>
+                        </div>
+                    </div>
+                </form>
+                <button type="button" onclick="deleteAssignee('${member.id}')" class="w-full bg-gradient-to-r from-red-600 to-orange-700 hover:from-red-700 hover:to-orange-800 text-white font-bold py-2.5 px-4 rounded-lg focus:outline-none focus:shadow-outline flex items-center justify-center mt-4 shadow-md text-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                        <path d="M3 6h18"></path>
+                        <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path>
+                        <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path>
+                        <line x1="10" y1="11" x2="10" y2="17"></line>
+                        <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                    Delete Assignee
+                </button>
+            `;
+            detailsElement.appendChild(contentDiv);
+
+            // Attach event listener to the form for submission
+            const form = contentDiv.querySelector(`#form-${member.id}`);
+            form.addEventListener('submit', (e) => handleSubmit(e, member.id));
+
+            return detailsElement;
+        }
+
+        /**
+         * Handles the form submission for a team member's confidence and comment.
+         * This now updates the local `teamMembersData` array and re-renders the UI.
+         * @param {Event} e - The submit event.
+         * @param {string} memberId - The ID of the team member.
+         */
+        async function handleSubmit(e, memberId) {
+            e.preventDefault();
+
+            const submitButton = document.getElementById(`submit-btn-${memberId}`);
+            showMessage(`message-${memberId}`, '', ''); // Clear previous message
+
+            submitButton.disabled = true;
+            submitButton.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Updating...`;
+
+            try {
+                const memberIndex = teamMembersData.findIndex(m => m.id === memberId);
+                if (memberIndex > -1) {
+                    const currentMember = teamMembersData[memberIndex];
+                    const updatedTasks = currentMember.assignedTasks.map(task => {
+                        const taskNameInput = document.getElementById(`task-name-${memberId}-${task.id}`);
+                        const confidenceSelect = document.getElementById(`confidence-${memberId}-${task.id}`);
+                        const commentTextarea = document.getElementById(`comment-${memberId}-${task.id}`);
+                        return {
+                            ...task,
+                            name: taskNameInput.value, // Update task name
+                            confidenceLevel: confidenceSelect.value,
+                            comment: commentTextarea.value
+                        };
+                    });
+
+                    currentMember.assignedTasks = updatedTasks;
+
+                    // Calculate assignee's overall confidence and comment based on updated tasks
+                    const { overallLevel, overallComment } = calculateAssigneeOverallConfidence(currentMember);
+                    currentMember.confidenceLevel = overallLevel;
+                    currentMember.comment = overallComment;
+                    currentMember.lastUpdatedBy = 'current_user'; // Placeholder
+                    currentMember.timestamp = new Date().toISOString();
+
+                    renderTeamMembers(teamMembersData); // Re-render all cards to show updates
+                    calculateOverallConfidence(teamMembersData); // Recalculate overall team confidence
+                    showMessage(`message-${memberId}`, "Confidence and comments updated successfully!", 'success');
+                } else {
+                    showMessage(`message-${memberId}`, "Error: Team member not found.", 'error');
+                }
+            } catch (error) {
+                console.error("Error updating data:", error);
+                showMessage(`message-${memberId}`, `Error updating data: ${error.message}`, 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2 h-5 w-5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>Update All Task Confidence`;
+                setTimeout(() => showMessage(`message-${memberId}`, '', ''), 5000); // Clear message after 5 seconds
+            }
+        }
+
+        /**
+         * Adds a new task input field to a specific assignee's accordion.
+         * @param {string} memberId - The ID of the team member.
+         */
+        function addNewTaskInput(memberId) {
+            const memberIndex = teamMembersData.findIndex(m => m.id === memberId);
+            if (memberIndex === -1) return;
+
+            const currentMember = teamMembersData[memberIndex];
+            const newTask = {
+                id: `task-${memberId}-${Date.now()}`, // Unique ID for the new task
+                name: 'New Task',
+                confidenceLevel: '',
+                comment: ''
+            };
+
+            currentMember.assignedTasks.push(newTask);
+            renderTeamMembers(teamMembersData); // Re-render to show the new task input
+            // Optionally, expand the accordion for the added task
+            const detailsElement = document.getElementById(`member-accordion-${memberId}`);
+            if (detailsElement) {
+                detailsElement.open = true;
+            }
+        }
+
+        /**
+         * Deletes a specific task from a team member's assigned tasks.
+         * @param {string} memberId - The ID of the team member.
+         * @param {string} taskId - The ID of the task to delete.
+         */
+        function deleteTask(memberId, taskId) {
+            const memberIndex = teamMembersData.findIndex(m => m.id === memberId);
+            if (memberIndex === -1) return;
+
+            const currentMember = teamMembersData[memberIndex];
+            currentMember.assignedTasks = currentMember.assignedTasks.filter(task => task.id !== taskId);
+
+            // Recalculate assignee's overall confidence and comment after deletion
+            const { overallLevel, overallComment } = calculateAssigneeOverallConfidence(currentMember);
+            currentMember.confidenceLevel = overallLevel;
+            currentMember.comment = overallComment;
+            currentMember.lastUpdatedBy = 'current_user';
+            currentMember.timestamp = new Date().toISOString();
+
+            renderTeamMembers(teamMembersData); // Re-render to reflect deletion
+            calculateOverallConfidence(teamMembersData); // Recalculate overall team confidence
+        }
+
+        /**
+         * Deletes an entire assignee from the team.
+         * @param {string} memberId - The ID of the assignee to delete.
+         */
+        function deleteAssignee(memberId) {
+            teamMembersData = teamMembersData.filter(member => member.id !== memberId);
+            renderTeamMembers(teamMembersData); // Re-render to reflect deletion
+            calculateOverallConfidence(teamMembersData); // Recalculate overall team confidence
+        }
+
+        /**
+         * Handles adding a new team member via the form.
+         * @param {Event} e - The submit event.
+         */
+        addMemberForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const name = newMemberNameInput.value.trim();
+            const tasksString = newMemberTasksInput.value.trim();
+
+            if (!name) {
+                // Using alert as per previous pattern for simple feedback
+                // In a production app, this would be a custom modal or inline message
+                alert('Team member name cannot be empty.');
+                return;
+            }
+
+            const newId = name.toLowerCase().replace(/\s+/g, '-'); // Simple ID generation
+            if (teamMembersData.some(member => member.id === newId)) {
+                alert('A team member with this name already exists.');
+                return;
+            }
+
+            const initialTasks = tasksString.split(',').map(taskName => taskName.trim())
+                .filter(taskName => taskName)
+                .map(taskName => ({
+                    id: `${newId}-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                    name: taskName,
+                    confidenceLevel: '',
+                    comment: ''
+                }));
+
+            const newMember = {
+                id: newId,
+                name: name,
+                assignedTasks: initialTasks,
+                confidenceLevel: '',
+                comment: '',
+                lastUpdatedBy: 'current_user',
+                timestamp: new Date().toISOString(),
+                confidenceHistory: [] // New members start with empty history
+            };
+
+            // Calculate initial overall confidence for the new member
+            const { overallLevel, overallComment } = calculateAssigneeOverallConfidence(newMember);
+            newMember.confidenceLevel = overallLevel;
+            newMember.comment = overallComment;
+
+            teamMembersData.push(newMember);
+            newMemberNameInput.value = '';
+            newMemberTasksInput.value = '';
+
+            renderTeamMembers(teamMembersData);
+            calculateOverallConfidence(teamMembersData);
+            // After adding a member, hide the "Manage Team Data" section and show the "Add Team Member" button
+            updateManageTeamDataVisibility();
+        });
+
+
+        /**
+         * Calculates the overall confidence level and aggregated comment for a single assignee
+         * based on their assigned tasks' confidence levels.
+         * @param {Object} assignee - The assignee object with assignedTasks.
+         * @returns {{overallLevel: string, overallComment: string}} - The calculated overall confidence level and aggregated comment.
+         */
+        function calculateAssigneeOverallConfidence(assignee) {
+            if (!assignee.assignedTasks || assignee.assignedTasks.length === 0) {
+                return { overallLevel: 'N/A', overallComment: 'No tasks assigned.' };
+            }
+
+            const confidenceMap = {
+                'Very High': 4,
+                'High': 3,
+                'Medium': 2,
+                'Low': 1,
+                '': 0 // Treat unselected as 0 for calculation
+            };
+
+            let totalScore = 0;
+            let validTasksCount = 0;
+            let allComments = [];
+
+            assignee.assignedTasks.forEach(task => {
+                const score = confidenceMap[task.confidenceLevel] || 0;
+                if (score > 0) { // Only count tasks with a selected confidence level
+                    totalScore += score;
+                    validTasksCount++;
+                }
+                if (task.comment) {
+                    allComments.push(`[${task.name.split(' | ')[0] || 'Task'}]: ${task.comment}`);
+                }
+            });
+
+            let overallLevel = 'N/A';
+            if (validTasksCount > 0) {
+                const averageScore = totalScore / validTasksCount;
+                if (averageScore > 3.5) {
+                    overallLevel = 'Very High';
+                } else if (averageScore > 2.5) {
+                    overallLevel = 'High';
+                } else if (averageScore > 1.5) {
+                    overallLevel = 'Medium';
+                } else {
+                    overallLevel = 'Low';
+                }
+            } else {
+                overallLevel = 'No Confidence Set';
+            }
+
+            const overallComment = allComments.length > 0 ? allComments.join('; ') : 'No specific task comments.';
+
+            return { overallLevel, overallComment };
+        }
+
+
+        /**
+         * Displays a feedback message to the user.
+         * @param {string} elementId - The ID of the message div.
+         * @param {string} msg - The message to display.
+         * @param {string} type - 'success' or 'error'.
+         */
+        function showMessage(elementId, msg, type) {
+            const msgElement = document.getElementById(elementId);
+            if (msg) {
+                msgElement.textContent = msg;
+                msgElement.classList.remove('hidden', 'bg-green-100', 'text-green-800', 'border-green-200', 'bg-red-100', 'text-red-800', 'border-red-200');
+                if (type === 'success') {
+                    msgElement.classList.add('bg-green-100', 'text-green-800', 'border', 'border-green-200');
+                } else if (type === 'error') {
+                    msgElement.classList.add('bg-red-100', 'text-red-800', 'border', 'border-red-200');
+                }
+            } else {
+                msgElement.classList.add('hidden');
+                msgElement.textContent = '';
+            }
+        }
+
+        /**
+         * Calculates and updates the overall team confidence percentage (for the top bar).
+         * Also updates the alert message.
+         * @param {Array<Object>} members - Array of team member data.
+         */
+        function calculateOverallConfidence(members) {
+            const overallConfidencePercentageSpan = document.getElementById('overall-confidence-percentage');
+            const overallConfidenceBar = document.getElementById('overall-confidence-bar');
+            const overallConfidenceAlert = document.getElementById('overall-confidence-alert');
+            const overallConfidenceAlertText = document.getElementById('overall-confidence-alert-text');
+
+            // Clear previous alert classes and hide
+            overallConfidenceAlert.classList.add('hidden');
+            overallConfidenceAlert.classList.remove('bg-red-100', 'border-red-500', 'text-red-700', 'bg-green-100', 'border-green-500', 'text-green-700');
+            overallConfidenceAlertText.innerHTML = '';
+
+
+            if (members.length === 0) {
+                overallConfidenceBar.style.width = '0%';
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #EF4444, #DC2626)'; // Default red for 0%
+                overallConfidencePercentageSpan.textContent = '0%';
+                overallConfidencePercentageSpan.className = 'ml-4 text-lg font-bold text-gray-700'; // Reset text color
+                return;
+            }
+
+            const confidenceMap = {
+                'Very High': 4,
+                'High': 3,
+                'Medium': 2,
+                'Low': 1,
+                '': 0, // Treat unselected as 0 for calculation
+                'N/A': 0, // Treat N/A as 0 for calculation
+                'No Confidence Set': 0 // Treat 'No Confidence Set' as 0 for calculation
+            };
+
+            let totalConfidenceScore = 0;
+            let membersWithValidConfidence = 0;
+
+            members.forEach(member => {
+                // Use the assignee's calculated overall confidence level
+                const score = confidenceMap[member.confidenceLevel] || 0;
+                if (score > 0) { // Only count members with a valid calculated confidence
+                    totalConfidenceScore += score;
+                    membersWithValidConfidence++;
+                }
+            });
+
+            if (membersWithValidConfidence === 0) {
+                overallConfidenceBar.style.width = '0%';
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #EF4444, #DC2626)'; // Default red for 0%
+                overallConfidencePercentageSpan.textContent = '0%';
+                overallConfidencePercentageSpan.className = 'ml-4 text-lg font-bold text-gray-700'; // Reset text color
+                return;
+            }
+
+            const maxPossibleScore = 4 * membersWithValidConfidence;
+            const calculatedOverall = (totalConfidenceScore / maxPossibleScore) * 100;
+
+            overallConfidenceBar.style.width = `${calculatedOverall}%`;
+            overallConfidencePercentageSpan.textContent = `${calculatedOverall.toFixed(0)}%`;
+
+            // Set background color for the bar and text color for the percentage based on confidence level
+            if (calculatedOverall === 100) {
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #22C55E, #16A34A)'; // Green
+                overallConfidencePercentageSpan.className = 'ml-3 text-base font-bold text-green-600';
+                overallConfidenceAlert.classList.remove('hidden');
+                overallConfidenceAlert.classList.add('bg-green-100', 'border-l-4', 'border-green-500', 'text-green-700');
+                overallConfidenceAlertText.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                    </svg>
+                    Positive Outlook: Team confidence is strong, indicating a high likelihood of delivering committed items as planned.
+                `;
+            } else if (calculatedOverall >= 75 && calculatedOverall < 100) {
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #3B82F6, #10B981)'; // Bluish Green
+                overallConfidencePercentageSpan.className = 'ml-3 text-base font-bold text-blue-600'; // Text color blue
+                overallConfidenceAlert.classList.remove('hidden');
+                overallConfidenceAlert.classList.add('bg-green-100', 'border-l-4', 'border-green-500', 'text-green-700'); // Still positive alert
+                overallConfidenceAlertText.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                        <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                    </svg>
+                    Good Progress: Team confidence is high, indicating a strong trajectory towards delivering committed items.
+                `;
+            } else if (calculatedOverall === 75) {
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #3B82F6, #2563EB)'; // Blue
+                overallConfidencePercentageSpan.className = 'ml-3 text-base font-bold text-blue-600';
+                // No specific alert for exactly 75% unless it falls into other categories
+                overallConfidenceAlert.classList.add('hidden'); // Ensure hidden if no specific message
+            } else if (calculatedOverall >= 50 && calculatedOverall < 75) {
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #F97316, #3B82F6)'; // Orangish Blue
+                overallConfidencePercentageSpan.className = 'ml-3 text-base font-bold text-orange-600'; // Text color orange
+                overallConfidenceAlert.classList.remove('hidden');
+                overallConfidenceAlert.classList.add('bg-yellow-100', 'border-l-4', 'border-yellow-500', 'text-yellow-700'); // Warning alert
+                overallConfidenceAlertText.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Watchful: Team confidence shows some areas needing attention. Proactive review is recommended.
+                `;
+            } else if (calculatedOverall === 50) {
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #F97316, #F59E0B)'; // Orange
+                overallConfidencePercentageSpan.className = 'ml-3 text-base font-bold text-orange-600';
+                // No specific alert for exactly 50% unless it falls into other categories
+                overallConfidenceAlert.classList.add('hidden'); // Ensure hidden if no specific message
+            } else if (calculatedOverall > 0 && calculatedOverall < 50) {
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #EF4444, #DC2626)'; // Red
+                overallConfidencePercentageSpan.className = 'ml-3 text-base font-bold text-red-600';
+                overallConfidenceAlert.classList.remove('hidden');
+                overallConfidenceAlert.classList.add('bg-red-100', 'border-l-4', 'border-red-500', 'text-red-700');
+                overallConfidenceAlertText.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                    Action Required: Team confidence indicates potential risks in delivering committed items. Review and address blockers promptly.
+                `;
+            } else { // CalculatedOverall is 0
+                overallConfidenceBar.style.background = 'linear-gradient(to right, #EF4444, #DC2626)'; // Default red for 0%
+                overallConfidencePercentageSpan.className = 'ml-3 text-base font-bold text-gray-700'; // Default text color for 0%
+                overallConfidenceAlert.classList.add('hidden'); // No alert for 0% unless it falls into <50%
+            }
+        }
+
+        /**
+         * Helper function to get Tailwind CSS class for confidence level text color.
+         * @param {string} level - The confidence level string.
+         * @returns {string} Tailwind CSS text color class.
+         */
+        function getConfidenceColor(level) {
+            switch (level) {
+                case 'Very High': return 'text-green-600';
+                case 'High': return 'text-lime-600';
+                case 'Medium': return 'text-yellow-600';
+                case 'Low': return 'text-red-600';
+                default: return 'text-gray-500';
+            }
+        }
+
+        /**
+         * Helper function to get Tailwind CSS classes for confidence level background and border.
+         * @param {string} level - The confidence level string.
+         * @returns {string} Tailwind CSS background and border color classes.
+         */
+        function getConfidenceHighlightClasses(level) {
+            switch (level) {
+                case 'Very High': return 'bg-green-100 border-green-400';
+                case 'High': return 'bg-blue-100 border-blue-400'; // Bluish
+                case 'Medium': return 'bg-amber-100 border-amber-400'; // Orange
+                case 'Low': return 'bg-red-100 border-red-400';
+                default: return 'bg-white border-gray-300'; // Default neutral
+            }
+        }
+
+        /**
+         * Updates the highlight of a confidence dropdown based on its selected value.
+         * @param {HTMLSelectElement} selectElement - The select element that changed.
+         */
+        function updateConfidenceHighlight(selectElement) {
+            // Remove all existing highlight classes
+            selectElement.classList.remove('bg-green-100', 'border-green-400',
+                                        'bg-blue-100', 'border-blue-400',
+                                        'bg-amber-100', 'border-amber-400',
+                                        'bg-red-100', 'border-red-400',
+                                        'bg-white', 'border-gray-300');
+
+            // Apply new highlight classes based on the selected value
+            const newClasses = getConfidenceHighlightClasses(selectElement.value).split(' ');
+            selectElement.classList.add(...newClasses);
+        }
+
+        /**
+         * Generates the HTML content for the PDF report.
+         * This function creates a structured, printable version of the data.
+         * @returns {string} The HTML string for the PDF report.
+         */
+        function generateReportHtml() {
+            let reportHtml = `
+                <div style="font-family: 'Verdana', sans-serif; padding: 10mm; color: #333; font-size: 9px; width: 190mm; box-sizing: border-box;">
+                    <h1 style="color: #1e3a8a; text-align: center; margin-bottom: 15px; font-size: 16px; line-height: 1.2;">Sprint Confidence Pulse Report</h1>
+            `;
+
+            reportHtml += `
+                    <h2 style="font-size: 14px; font-weight: 600; color: #333; margin-top: 15px; margin-bottom: 10px; line-height: 1.2;">Team Member Details</h2>
+            `;
+
+            if (teamMembersData.length === 0) {
+                reportHtml += `
+                    <p style="text-align: center; color: #6b7280; font-style: italic; padding: 20px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); font-size: 10px; line-height: 1.5;">No team members added to the report.</p>
+                `;
+            } else {
+                teamMembersData.forEach(member => {
+                    const assigneeOverall = calculateAssigneeOverallConfidence(member);
+                    reportHtml += `
+                        <div style="background-color: #f0f9ff; border-radius: 8px; padding: 10px; margin-bottom: 10px; border-top: 3px solid #60a5fa; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                            <h3 style="font-size: 13px; font-weight: 600; color: #1f2937; margin-bottom: 8px; display: flex; align-items: center; line-height: 1.2;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px; height: 16px; width: 16px; color: #3b82f6;">
+                                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="9" cy="7" r="4"></circle>
+                                    <path d="M22 21v-2a4 4 0 0 0-3-3.87"></path>
+                                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                                </svg>
+                                ${member.name}
+                            </h3>
+                            <div style="margin-bottom: 10px;">
+                                <p style="color: #4b5563; font-weight: 500; margin-bottom: 5px; display: flex; align-items: center; font-size: 11px; line-height: 1.3;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; height: 14px; width: 14px; color: #22c55e;">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    Assigned Tasks:
+                                </p>
+                                <div style="margin-left: 6px;">
+                    `;
+                    if (member.assignedTasks && member.assignedTasks.length > 0) {
+                        member.assignedTasks.forEach(task => {
+                            reportHtml += `
+                                <div style="background-color: ${getConfidenceHighlightClasses(task.confidenceLevel).includes('bg-green-100') ? '#dcfce7' : getConfidenceHighlightClasses(task.confidenceLevel).includes('bg-blue-100') ? '#e0f2fe' : getConfidenceHighlightClasses(task.confidenceLevel).includes('bg-amber-100') ? '#fffbeb' : getConfidenceHighlightClasses(task.confidenceLevel).includes('bg-red-100') ? '#fee2e2' : '#f9fafb'}; border-radius: 4px; padding: 8px; margin-bottom: 6px; border: 1px solid ${getConfidenceHighlightClasses(task.confidenceLevel).includes('border-green-400') ? '#4ade80' : getConfidenceHighlightClasses(task.confidenceLevel).includes('border-blue-400') ? '#60a5fa' : getConfidenceHighlightClasses(task.confidenceLevel).includes('border-amber-400') ? '#fbbf24' : getConfidenceHighlightClasses(task.confidenceLevel).includes('border-red-400') ? '#f87171' : '#e5e7eb'};">
+                                    <p style="font-weight: 500; color: #374151; margin-bottom: 3px; font-size: 11px; line-height: 1.3;">Task: ${task.name}</p>
+                                    <p style="font-size: 10px; color: #4b5563; margin-bottom: 3px; line-height: 1.3;">
+                                        Confidence: <span style="font-weight: 600; color: ${getConfidenceColor(task.confidenceLevel).split('-')[1] === 'green' ? '#16a34a' : getConfidenceColor(task.confidenceLevel).split('-')[1] === 'lime' ? '#84cc16' : getConfidenceColor(task.confidenceLevel).split('-')[1] === 'yellow' ? '#facc15' : getConfidenceColor(task.confidenceLevel).split('-')[1] === 'red' ? '#dc2626' : '#6b7280'};">${task.confidenceLevel || 'N/A'}</span>
+                                    </p>
+                                    <p style="font-size: 10px; color: #4b5563; line-height: 1.3;">
+                                        Comments: <span style="font-style: italic;">${task.comment || 'No comment provided.'}</span>
+                                    </p>
+                                </div>
+                            `;
+                        });
+                    } else {
+                        reportHtml += `<p style="font-size: 11px; font-style: italic; color: #6b7280; line-height: 1.3;">No tasks assigned for this assignee.</p>`;
+                    }
+                    reportHtml += `
+                                </div>
+                            </div>
+                            <!-- Assignee's Overall Confidence for PDF -->
+                            <div style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #e5e7eb;">
+                                <p style="color: #4b5563; font-weight: 500; margin-bottom: 5px; display: flex; align-items: center; font-size: 11px; line-height: 1.3;">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; height: 14px; width: 14px; color: #6366f1;">
+                                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V3a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                                    </svg>
+                                    Assignee's Overall Confidence:
+                                </p>
+                                <div style="background-color: #eff6ff; padding: 8px; border-radius: 4px; border: 1px solid #bfdbfe;">
+                                    <p style="font-size: 11px; color: #4b5563; line-height: 1.3;">
+                                        Level: <span style="font-weight: 600; color: ${getConfidenceColor(assigneeOverall.overallLevel).split('-')[1] === 'green' ? '#16a34a' : getConfidenceColor(assigneeOverall.overallLevel).split('-')[1] === 'lime' ? '#84cc16' : getConfidenceColor(assigneeOverall.overallLevel).split('-')[1] === 'yellow' ? '#facc15' : getConfidenceColor(assigneeOverall.overallLevel).split('-')[1] === 'red' ? '#dc2626' : '#6b7280'};">${assigneeOverall.overallLevel || 'N/A'}</span>
+                                    </p>
+                                    <p style="font-size: 11px; color: #4b5563; margin-top: 2px; line-height: 1.3;">
+                                        Summary: <span style="font-style: italic;">${assigneeOverall.overallComment || 'No overall comment.'}</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            // Overall Confidence Section for PDF (moved to bottom)
+            const currentOverallConfidence = parseFloat(overallConfidencePercentage.textContent);
+            let overallConfidenceBarColor = 'linear-gradient(to right, #EF4444, #DC2626)'; // Default red
+            let overallConfidenceTextColor = '#dc2626'; // Default red text
+
+            if (currentOverallConfidence === 100) {
+                overallConfidenceBarColor = 'linear-gradient(to right, #22C55E, #16A34A)'; // Green
+                overallConfidenceTextColor = '#16a34a'; // Green text
+            } else if (currentOverallConfidence >= 75 && currentOverallConfidence < 100) {
+                overallConfidenceBarColor = 'linear-gradient(to right, #3B82F6, #10B981)'; // Bluish Green
+                overallConfidenceTextColor = '#2563eb'; // Text color blue
+            } else if (currentOverallConfidence === 75) {
+                overallConfidenceBarColor = 'linear-gradient(to right, #3B82F6, #2563EB)'; // Blue
+                overallConfidenceTextColor = '#2563eb'; // Blue text
+            } else if (currentOverallConfidence >= 50 && currentOverallConfidence < 75) {
+                overallConfidenceBarColor = 'linear-gradient(to right, #F97316, #3B82F6)'; // Orangish Blue
+                overallConfidenceTextColor = '#f97316'; // Text color orange
+            } else if (currentOverallConfidence === 50) {
+                overallConfidenceBarColor = 'linear-gradient(to right, #F97316, #F59E0B)'; // Orange
+                overallConfidenceTextColor = '#f97316'; // Orange text
+            } else if (currentOverallConfidence > 0 && currentOverallConfidence < 50) {
+                overallConfidenceBarColor = 'linear-gradient(to right, #EF4444, #DC2626)'; // Red
+                overallConfidenceTextColor = '#dc2626'; // Red text
+            } else { // CalculatedOverall is 0
+                overallConfidenceBarColor = 'linear-gradient(to right, #EF4444, #DC2626)'; // Default red for 0%
+                overallConfidenceTextColor = '#6b7280'; // Default gray text for 0%
+            }
+
+            reportHtml += `
+                    <!-- Overall Confidence Section for PDF -->
+                    <div style="background-color: #ffffff; border-radius: 8px; padding: 15px; margin-top: 20px; border-top: 3px solid #3b82f6; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <h2 style="font-size: 16px; font-weight: 600; color: #333; margin-bottom: 10px; line-height: 1.2;">Overall Confidence</h2>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                            <div style="width: 100%; background-color: #e5e7eb; border-radius: 9999px; height: 10px;">
+                                <div style="height: 10px; border-radius: 9999px; width: ${overallConfidencePercentage.textContent}; background: ${overallConfidenceBarColor};"></div>
+                            </div>
+                            <span style="margin-left: 10px; font-size: 14px; font-weight: bold; color: ${overallConfidenceTextColor};">${overallConfidencePercentage.textContent}</span>
+                        </div>
+                        <p style="color: #4b5563; font-size: 11px; margin-top: 5px; line-height: 1.3;">Aggregated confidence level</p>
+                    </div>
+            `;
+
+            // Add Overall Confidence Alert to PDF if visible (moved to bottom)
+            const currentOverallConfidenceValue = parseFloat(overallConfidencePercentage.textContent);
+            if (currentOverallConfidenceValue < 50 || currentOverallConfidenceValue >= 75) {
+                let alertBgColor = '';
+                let alertBorderColor = '';
+                let alertTextColor = '';
+                let alertMessage = '';
+                let alertIcon = '';
+
+                if (currentOverallConfidenceValue < 50) {
+                    alertBgColor = '#fee2e2';
+                    alertBorderColor = '#ef4444';
+                    alertTextColor = '#b91c1c';
+                    alertMessage = `Action Required: Team confidence indicates potential risks in delivering committed items. Review and address blockers promptly.`;
+                    alertIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
+                                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                                <line x1="12" y1="9" x2="12" y2="13"></line>
+                                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                            </svg>`;
+                } else if (currentOverallConfidenceValue >= 75) {
+                    alertBgColor = '#dcfce7';
+                    alertBorderColor = '#22c55e';
+                    alertTextColor = '#15803d';
+                    alertMessage = `Positive Outlook: Team confidence is strong, indicating a high likelihood of delivering committed items as planned.`;
+                    alertIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 5px;">
+                                <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+                            </svg>`;
+                }
+
+                reportHtml += `
+                    <div style="padding: 10px; margin-top: 15px; border-radius: 8px; background-color: ${alertBgColor}; border-left: 3px solid ${alertBorderColor}; color: ${alertTextColor}; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                        <p style="font-weight: bold; display: flex; align-items: center; font-size: 11px; line-height: 1.3;">${alertIcon}${alertMessage}</p>
+                    </div>
+                `;
+            }
+
+            reportHtml += `</div>`;
+            return reportHtml;
+        }
+
+        /**
+         * Downloads the main content area as a PDF report.
+         * This function handles capturing the dynamically generated HTML for the PDF.
+         */
+        downloadReportButton.addEventListener('click', async () => {
+            // Validate comments before generating PDF
+            const validationErrors = validateCommentsForPdf();
+            if (validationErrors.length > 0) {
+                alert("Please provide comments for the following tasks with 'Medium' or 'Low' confidence:\n\n" + validationErrors.join('\n'));
+                return; // Stop PDF generation
+            }
+
+            // Temporarily hide UI elements that should not appear in the PDF
+            const manageDataSection = document.getElementById('manage-team-data-section');
+            const addMemberBtn = document.getElementById('add-team-member-button');
+            const overallAlert = document.getElementById('overall-confidence-alert');
+
+            const originalManageDisplay = manageDataSection.style.display;
+            const originalAddBtnDisplay = addMemberBtn.style.display;
+            const originalAlertDisplay = overallAlert.style.display;
+
+            manageDataSection.style.display = 'none';
+            addMemberBtn.style.display = 'none';
+            overallAlert.style.display = 'none';
+
+            // Show loading indicator
+            downloadReportButton.disabled = true;
+            downloadReportButton.innerHTML = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Generating PDF...`;
+
+            try {
+                // Populate the hidden PDF report container with structured HTML
+                pdfReportContainer.innerHTML = generateReportHtml();
+
+                const canvas = await html2canvas(pdfReportContainer, { // Capture the hidden container
+                    scale: 2, // Increase scale for better resolution
+                    useCORS: true, // Enable cross-origin images if any
+                    logging: false // Disable logging for cleaner console
+                });
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.9); // Use JPEG with quality 0.9 for balance
+
+                const pdf = new jspdf.jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth(); // 210 mm
+                const pdfHeight = pdf.internal.pageSize.getHeight(); // 297 mm
+
+                const imgCanvasWidth = canvas.width;
+                const imgCanvasHeight = canvas.height;
+
+                // Calculate image dimensions to fit PDF width, maintaining aspect ratio
+                const imgPdfWidth = pdfWidth;
+                const imgPdfHeight = imgCanvasHeight * imgPdfWidth / imgCanvasWidth;
+
+                let heightLeft = imgPdfHeight;
+                let position = 0; // Y position on the image to start slicing
+
+                // Add first page
+                pdf.addImage(imgData, 'JPEG', 0, position, imgPdfWidth, imgPdfHeight);
+                heightLeft -= pdfHeight;
+
+                // Add subsequent pages if content overflows
+                while (heightLeft > -1) { // Check if there's still content left to add
+                    position = heightLeft - imgPdfHeight; // Calculate new Y position for the next slice
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, position, imgPdfWidth, imgPdfHeight);
+                    heightLeft -= pdfHeight;
+                }
+
+                pdf.save('Sprint_Confidence_Report.pdf');
+
+            } catch (error) {
+                console.error("Error generating PDF:", error);
+                alert("Failed to generate PDF report. Please try again. Error: " + error.message);
+            } finally {
+                // Restore original UI state
+                manageDataSection.style.display = originalManageDisplay;
+                addMemberBtn.style.display = originalAddBtnDisplay;
+                overallAlert.style.display = originalAlertDisplay;
+                pdfReportContainer.innerHTML = ''; // Clear the hidden container
+
+                downloadReportButton.disabled = false;
+                downloadReportButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                Download Report`;
+            }
+        });
+
+        /**
+         * Saves the current teamMembersData as a JSON file.
+         */
+        saveJsonButton.addEventListener('click', () => {
+            const dataStr = JSON.stringify(teamMembersData, null, 2); // Pretty print JSON
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sprint_confidence_data.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        /**
+         * Handles the upload of a JSON file and updates teamMembersData.
+         */
+        uploadJsonButton.addEventListener('click', () => {
+            uploadJsonInput.click(); // Trigger the hidden file input click
+        });
+
+        uploadJsonInput.addEventListener('change', (event) => {
+            const files = event.target.files; // Get all selected files
+            if (files.length === 0) {
+                return;
+            }
+
+            // Iterate over each selected file
+            Array.from(files).forEach(file => {
+                // Validate file type
+                if (file.type !== 'application/json') {
+                    alert('Invalid file format. Please upload a JSON file (e.g., a file with a .json extension).');
+                    return; // Skip this file if not JSON
+                }
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const parsedData = JSON.parse(e.target.result);
+                        if (Array.isArray(parsedData)) {
+                            // Append data from this file to existing teamMembersData
+                            teamMembersData.push(...parsedData);
+                            // After processing all files, re-render and update confidence
+                            // This ensures all files are processed before updating the UI
+                            if (Array.from(files).indexOf(file) === files.length - 1) { // Check if this is the last file
+                                renderTeamMembers(teamMembersData);
+                                calculateOverallConfidence(teamMembersData);
+                                alert(`Successfully loaded data from ${files.length} JSON file(s)!`);
+                            }
+                        } else {
+                            alert(`Invalid JSON format in file "${file.name}": Expected an array of team members.`);
+                        }
+                    } catch (error) {
+                        console.error(`Error parsing JSON file "${file.name}":`, error);
+                        alert(`Error reading JSON file "${file.name}": ` + error.message);
+                    }
+                };
+                reader.readAsText(file);
+            });
+        });
+
+
+        /**
+         * Validates if comments are provided for tasks with 'Medium' or 'Low' confidence.
+         * @returns {Array<string>} A list of error messages for tasks missing comments.
+         */
+        function validateCommentsForPdf() {
+            const errors = [];
+            teamMembersData.forEach(member => {
+                member.assignedTasks.forEach(task => {
+                    const confidenceLevel = task.confidenceLevel;
+                    const comment = task.comment ? task.comment.trim() : '';
+
+                    if ((confidenceLevel === 'Medium' || confidenceLevel === 'Low') && comment === '') {
+                        errors.push(`- Assignee: ${member.name}, Task: "${task.name}"`);
+                    }
+                });
+            });
+            return errors;
+        }
+
+
+        // Initial render when the window loads
+        window.onload = () => {
+            // Calculate initial overall confidence for each assignee (will be N/A initially)
+            teamMembersData.forEach(member => {
+                const { overallLevel, overallComment } = calculateAssigneeOverallConfidence(member);
+                member.confidenceLevel = overallLevel;
+                member.comment = overallComment;
+            });
+
+            renderTeamMembers(teamMembersData);
+            calculateOverallConfidence(teamMembersData);
+            updateManageTeamDataVisibility(); // Set initial visibility based on empty data
+        };
+    </script>
+</body>
+</html>
